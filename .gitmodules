@@ -1,3 +1,0 @@
-[submodule "eos_calibration"]
-	path = eos_calibration
-	url = git@github.com:elikeener/eos_calibration.git
