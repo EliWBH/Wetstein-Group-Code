@@ -1,0 +1,83 @@
+#define Calibration_cxx
+#include "Calibration.h"
+#include <TH2.h>
+#include <TStyle.h>
+#include <TCanvas.h>
+
+void Calibration::Loop(metaD meta)
+{
+   //Branch Initialization
+   if (fChain == 0) return;
+   fChain->SetBranchStatus("*",0);
+   fChain->SetBranchStatus("digitPeak",1);
+   fChain->SetBranchStatus("digitPMTID",1);
+
+   //Metadata Initialization
+   vector<double> xPositions = *meta.pmtX;
+   vector<double> yPositions = *meta.pmtY;
+   vector<double> zPositions = *meta.pmtZ;
+   double xPos;
+   double yPos;
+   double zPos;
+
+   double colSixX = 502.5;
+   double colSixY = -870.4;
+
+   int channelSelect;
+
+   printf("Which pmt do you want to look at? ");
+   scanf("%d", & channelSelect);
+
+   Long64_t nentries = fChain->GetEntriesFast();
+   
+   TCanvas *c1 = new TCanvas("c1", "Axial Sensitivity 20mm", 200,10,800,600);
+   // TCanvas *c2 = new TCanvas("c2", "Axial Sensitivity 20mm", 200,10,800,600);
+   // TCanvas *c3 = new TCanvas("c3", "Axial Sensitivity 20mm", 200,10,800,600);
+
+
+   TH1F *pulseFrequency = new TH1F("pulseFreq", "Frequency of a given PMT Seeing Light",241,0, 242);
+   TH1F *pulseHeight = new TH1F("myHisto", "Pulse Height Distribution of PMT",50, -50,0);
+   TH2F *pulseHeat = new TH2F("twoD", "Position Heatmap", 24,0, 360, 10, -1050, 1050);
+
+   Long64_t nbytes = 0, nb = 0;
+   for (Long64_t jentry=0; jentry<nentries;jentry++) {
+      Long64_t ientry = LoadTree(jentry);
+      GetEntry(jentry);
+      
+      vector<double> peakData = *digitPeak;
+      vector<int> idData = *digitPMTID;
+      
+      double max = peakData[0]; 
+      int index = 0;
+
+      for(int entry=0; entry < peakData.size(); entry++){
+        pulseFrequency->Fill(idData[entry]); 
+	if(idData[entry] == channelSelect){
+            pulseHeight->Fill(peakData[entry]);     
+         }
+      }
+
+      for(int pmt = 0; pmt < idData.size(); pmt++){
+         double length = TMath::Sqrt(TMath::Power(yPositions[idData[pmt]], 2 ) + TMath::Power(xPositions[idData[pmt]], 2 ));
+         double phi = TMath::ATan2(yPositions[idData[pmt]], xPositions[idData[pmt]]) * -180 / TMath::Pi() + 180;
+         // double phi = TMath::ATan(yPositions[idData[pmt]] / xPositions[idData[pmt]]) * -180 / TMath::Pi() ;
+   
+         pulseHeat->Fill(phi,zPositions[idData[pmt]]);
+         
+      }
+      
+      //printf("%d\n", index); //, xPos, yPos, zPos);
+
+      if (ientry < 0) break;
+      nb = fChain->GetEntry(jentry);   nbytes += nb;
+      // if (Cut(ientry) < 0) continue;
+   }
+   //c1->Update();
+   //pulseFrequency->Draw();
+   // c1->Write();
+   // c2->Update();
+   //pulseHeight->Draw();
+   // c2->Write();
+   pulseHeat->Draw("colz");
+   // c3->Write();
+}

@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "PracticeClass.C": "cpp",
+        "Calibration.C": "cpp",
+        "vector": "cpp",
+        "new": "cpp",
+        "array": "cpp",
+        "string_view": "cpp",
+        "initializer_list": "cpp",
+        "utility": "cpp",
+        "metaData.C": "cpp",
+        "string": "cpp"
+    }
+}
