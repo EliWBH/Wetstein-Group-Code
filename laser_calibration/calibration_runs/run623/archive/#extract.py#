@@ -1,0 +1,50 @@
+#!/usr/bin/python3
+import sys
+import uproot
+import csv
+import pandas as pd
+import awkward as ak
+
+# filename = "eos_data-fiber_calibration-5-3-run-623.0.ntuple.root"
+
+with uproot.open(str(sys.argv[1])) as file:
+    #Extract the meta data
+    meta = file['meta']
+    x_pos = ak.flatten(meta['pmtX'].array())
+    y_pos = ak.flatten(meta['pmtY'].array())
+    z_pos = ak.flatten(meta['pmtZ'].array())
+
+    #Extract the output data
+    data = file['output']
+    pre_time = data['digitTime'].array()
+
+    #Way to extract the event number (ideally want to find a better way)
+    event_number = []
+    counter = 1
+    for event in pre_time:
+        for value in event:
+            event_number.append(counter)
+        counter += 1
+
+    time = ak.flatten(data['digitTime'].array())
+    charge = ak.flatten(data['digitCharge'].array())
+    num_hits = ak.flatten(data['digitPMTID'].array())
+    
+#Make the meta data CSV    
+with open('metaData.csv', 'w', newline='') as meta_csv:
+    fieldnames = ['PMTID', 'X Position', 'Y Position', 'Z Position']
+    meta_writer = csv.DictWriter(meta_csv, fieldnames=fieldnames)
+    meta_writer.writeheader()
+
+    for i in range(0, len(x_pos)):
+        meta_writer.writerow({'PMTID': i, 'X Position': x_pos[i], 'Y Position': y_pos[i], 'Z Position': z_pos[i]})
+   meta_csv.close()
+
+#Make the output data CSV
+with open('outputData.csv', 'w', newline='') as data_csv:
+    fieldnames = ['Event Number', 'PMTID', 'Time', 'Charge']
+    data_writer = csv.DictWriter(data_csv, fieldnames=fieldnames)
+    data_writer.writeheader()
+
+    for i in range(0, len(num_hits)):
+        data_writer.writerow({'Event Number': event_number[i], 'PMTID': num_hits[i], 'Time':time[i], 'Charge':charge[i]})
